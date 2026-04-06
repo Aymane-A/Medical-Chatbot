@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediBot - AI Medical Assistant</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .logo i {
+            color: #e74c3c;
+            font-size: 2rem;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+        }
+
+        .message {
+            display: flex;
+            max-width: 70%;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message.bot {
+            align-self: flex-start;
+        }
+
+        .message-content {
+            padding: 1.25rem 1.5rem;
+            border-radius: 1.25rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.bot .message-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #2c3e50;
+        }
+
+        .message.bot .message-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -10px;
+            width: 0;
+            height: 0;
+            border: 10px solid transparent;
+            border-right-color: rgba(255, 255, 255, 0.95);
+            border-top: 0;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            flex-shrink: 0;
+            margin: 0 0.5rem;
+        }
+
+        .message.user .message-avatar {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        .message.bot .message-avatar {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .input-container {
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 2.5rem;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .input-field {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 1rem;
+            background: transparent;
+            padding: 0.75rem 0;
+            color: #2c3e50;
+        }
+
+        .input-field::placeholder {
+            color: #7f8c8d;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border: none;
+            outline: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(231, 76, 60, 0.4);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1.25rem 1.5rem;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #bdc3c7;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+
+            .messages {
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+
+            .input-container {
+                padding: 1rem;
+            }
+
+            .input-wrapper {
+                padding: 0.75rem 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .message {
+                max-width: 95%;
+            }
+
+            .logo {
+                font-size: 1.25rem;
+            }
+
+            .logo i {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Scrollbar Styling */
+        .messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .messages::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .messages::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        .messages::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <i class="fas fa-stethoscope"></i>
+            MediBot
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="messages" id="messages">
+            <div class="message bot">
+                <div class="message-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="message-content">
+                    <strong>MediBot:</strong> Hello! I'm your AI medical assistant. I can help answer your health questions, explain symptoms, and provide general medical information. <em>Please note: I'm not a substitute for professional medical advice.</em>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <div class="input-wrapper">
+                <input 
+                    type="text" 
+                    class="input-field" 
+                    id="messageInput"
+                    placeholder="Ask me about your symptoms, medications, or health concerns..."
+                    autocomplete="off"
+                >
+                <button class="send-btn" id="sendBtn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class MedicalChatbot {
+            constructor() {
+                this.messagesContainer = document.getElementById('messages');
+                this.inputField = document.getElementById('messageInput');
+                this.sendBtn = document.getElementById('sendBtn');
+                
+                this.initEventListeners();
+                this.scrollToBottom();
+            }
+
+            initEventListeners() {
+                this.sendBtn.addEventListener('click', () => this.sendMessage());
+                this.inputField.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+
+                // Focus input on load
+                this.inputField.focus();
+            }
+
+            async sendMessage() {
+                const message = this.inputField.value.trim();
+                if (!message) return;
+
+                // Disable input and show typing
+                this.setInputDisabled(true);
+                this.addUserMessage(message);
+                this.inputField.value = '';
+
+                // Simulate typing indicator
+                const typingIndicator = this.addTypingIndicator();
+
+
+                // Call Flask backend
+                const formData = new FormData();
+                formData.append('msg', message);
+
+                const response = await fetch('/get', {
+                    method: 'POST',
+                    body: formData
+                });
+                const botReply = await response.text();
+                this.setInputDisabled(false);
+                this.inputField.value = '';
+                this.scrollToBottom();
+
+                // Remove typing indicator and add bot response
+                this.messagesContainer.removeChild(typingIndicator);
+                this.addBotMessage(botReply);
+               
+
+                // Re-enable input
+                this.setInputDisabled(false);
+                this.inputField.value = '';
+                this.scrollToBottom();
+            }
+
+            addUserMessage(message) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message user';
+                messageDiv.innerHTML = `
+                    <div class="message-avatar">U</div>
+                    <div class="message-content">${this.escapeHtml(message)}</div>
+                `;
+                this.messagesContainer.appendChild(messageDiv);
+                this.scrollToBottom();
+            }
+
+            addBotMessage(message) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message bot';
+                messageDiv.innerHTML = `
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <strong>MediBot:</strong> ${message}
+                    </div>
+                `;
+                this.messagesContainer.appendChild(messageDiv);
+                this.scrollToBottom();
+            }
+
+            addTypingIndicator() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'message bot typing-indicator';
+                typingDiv.innerHTML = `
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        MediBot is typing...
+                        <div class="typing-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                `;
+                this.messagesContainer.appendChild(typingDiv);
+                this.scrollToBottom();
+                return typingDiv;
+            }
+
+            generateResponse(message) {
+                const responses = {
+                    'hello': 'Hello! How can I assist you with your health today?',
+                    'headache': 'Headaches can have many causes including tension, dehydration, stress, or migraines. Common remedies include rest, hydration, and over-the-counter pain relievers like ibuprofen. If persistent or severe, consult a doctor.',
+                    'fever': 'A fever is your body\'s response to infection. Monitor your temperature and stay hydrated. For adults, fever above 103°F (39.4°C) or lasting more than 3 days needs medical attention.',
+                    'cough': 'Coughing helps clear your airways. Stay hydrated, use a humidifier, and consider honey for soothing. Persistent cough (>2 weeks) or with blood should be evaluated.',
+                    'stomach pain': 'Abdominal pain can result from gas, indigestion, constipation, or more serious issues. Track symptoms, location, and duration. Severe pain requires immediate medical attention.',
+                    'default': 'I understand your concern. Could you provide more details about your symptoms? Duration, severity, and any associated symptoms help me give better guidance. Remember to consult a healthcare professional for personalized advice.'
+                };
+
+                const lowerMessage = message.toLowerCase();
+                for (let key in responses) {
+                    if (lowerMessage.includes(key)) {
+                        return responses[key];
+                    }
+                }
+                return responses.default;
+            }
+
+            setInputDisabled(disabled) {
+                this.inputField.disabled = disabled;
+                this.sendBtn.disabled = disabled;
+                this.sendBtn.innerHTML = disabled 
+                    ? '<i class="fas fa-spinner fa-spin"></i>'
+                    : '<i class="fas fa-paper-plane"></i>';
+            }
+
+            scrollToBottom() {
+                this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+
+        // Initialize chatbot when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new MedicalChatbot();
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            const chatbot = window.chatbot || new MedicalChatbot();
+            window.chatbot = chatbot;
+        });
+    </script>
+</body>
+</html>
